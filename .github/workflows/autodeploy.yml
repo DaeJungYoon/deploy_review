@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Chechout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Create .env file
@@ -42,7 +42,7 @@ jobs:
           username: ${{secrets.SSH_USERNAME}}
           key: ${{secrets.SSH_PRIVATE_KEY}}
           port: ${{secrets.SSH_PORT}}
-          source: 'docker-compose.yml, .env'
+          source: 'docker-compose.yml,.env'
           target: '~/github-actions-work-directory'
 
       - name: Pull Image & Up Container
