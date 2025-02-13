@@ -58,7 +58,7 @@ services:
     depends_on:
       - db
       - api
-
+# ㅇㄹㄹㄹ
 # volumes와 networks 블록
 volumes:
   db-volume:
