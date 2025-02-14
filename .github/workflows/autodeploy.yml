@@ -18,30 +18,17 @@ jobs:
         # actions/cache: 깃허브 캐시 저장소 활용을 위한 라이브러리
         uses: actions/cache@v4.2.0
         with:
-          path: /tmp/.buildx-cache
-          key: docker-image-layer-cache-${{github.sha}}
-          restore-keys:
-            docker-image-layer-cache-
+          path: /tmp/.buildx-cache # 캐시로 관리할 경로
+          key: docker-image-layer-cache-${{github.sha}} # 불러올 캐시 이름(식별자)
+          restore-keys: # 만약 캐시 key를 찾지 못하면 대체할 캐시 key 패턴턴
+            docker-image-layer-cache- 
 
       - name: run ssh-agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY  }}
              # 도커 Buildkit 엔진 설정 action(라이브러리)
-      - name: Set up Docker Buildkit
-        # setup-buildx-action
-        # -Buildkit을 설치하는 actino(라이브러리)
-        # buildx = Buildkit
-        uses: docker/setup-buildx-action@v3
 
-      # Buildkit 엔진 빌더(이미지 빌드를 도와주는 도구) 생성
-      # 기존 Docker 빌더 : Cache 파일 저장&불러오는 경로 제어 불가
-      - name: Create Buildkit 빌더
-        # 1. buildkit 빌더(buildkit)를 생성하는 명령어
-        # 2. 빌더(buildkit) 설정 명령어
-        run: |
-          docker buildx create --use --name buildkit
-          docker buildx use buildkit
      
 
       - name: Create .env file
@@ -59,21 +46,35 @@ jobs:
 
       - name: Login DockerHub
         run: echo '${{ secrets.DOCKER_PASSWORD}}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
+      
+      - name: Set up Docker Buildkit
+        # setup-buildx-action
+        # -Buildkit을 설치하는 actino(라이브러리)
+        # buildx = Buildkit
+        uses: docker/setup-buildx-action@v3
 
+      # Buildkit 엔진 빌더(이미지 빌드를 도와주는 도구) 생성
+      # 기존 Docker 빌더 : Cache 파일 저장&불러오는 경로 제어 불가
+      - name: Create Buildkit 빌더
+        # 1. buildkit 빌더(buildkit)를 생성하는 명령어
+        # 2. 빌더(buildkit) 설정 명령어
+        run: |
+          docker buildx create --use --name buildkit
+          docker buildx use buildkit
       - name: Docker Image Build
-        run: docker compose -f docker-compose.yml build
+        run: docker compose -f docker-compose-cache.yml build --build-arg BUILDKIT_INLINE_CACHE=1 
 
       - name: Docker Image Push
-        run: docker compose -f docker-compose.yml push
+        run: docker compose -f docker-compose-cache.yml push
 
-      - name: Copy .env / docker-compose.yml
+      - name: Copy .env / docker-compose-cache.yml
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          source: "docker-compose.yml,.env"
+          source: "docker-compose-cache.yml,.env"
           target: "~/github-actions-work-directory"
 
       - name: Pull Image & Up Container
@@ -85,6 +86,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd ~/github-actions-work-directory
-            docker compose -f docker-compose.yml pull
-            docker compose -f docker-compose.yml down
-            docker compose -f docker-compose.yml up -d
+            docker compose -f docker-compose-cache.yml pull
+            docker compose -f docker-compose-cache.yml down
+            docker compose -f docker-compose-cache.yml up -d
+            docker system prune -f 
