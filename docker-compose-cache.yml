@@ -64,7 +64,7 @@ services:
     image: daejungyoon/client:latest
     environment:
       - DOMAIN = 3.34.123.93.sslip.io
-      - API_URL = http:/api-container:8080
+      - API_URL = http://api-container:8080
     ports:
       - '80:80'
       - '443:443'
