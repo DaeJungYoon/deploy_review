@@ -12,6 +12,37 @@ jobs:
     steps: # 실행할 작업(step)
       - name: Checkout code
         uses: actions/checkout@v4
+        
+      # 캐시 저장 설정을 위한 action(라이브러리)
+      - name: Cache Docker Image Layer
+        # actions/cache: 깃허브 캐시 저장소 활용을 위한 라이브러리
+        uses: actions/cache@v4.2.0
+        with:
+          path: /tmp/.buildx-cache
+          key: docker-image-layer-cache-${{github.sha}}
+          restore-keys:
+            docker-image-layer-cache-
+
+      - name: run ssh-agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY  }}
+             # 도커 Buildkit 엔진 설정 action(라이브러리)
+      - name: Set up Docker Buildkit
+        # setup-buildx-action
+        # -Buildkit을 설치하는 actino(라이브러리)
+        # buildx = Buildkit
+        uses: docker/setup-buildx-action@v3
+
+      # Buildkit 엔진 빌더(이미지 빌드를 도와주는 도구) 생성
+      # 기존 Docker 빌더 : Cache 파일 저장&불러오는 경로 제어 불가
+      - name: Create Buildkit 빌더
+        # 1. buildkit 빌더(buildkit)를 생성하는 명령어
+        # 2. 빌더(buildkit) 설정 명령어
+        run: |
+          docker buildx create --use --name buildkit
+          docker buildx use buildkit
+     
 
       - name: Create .env file
         run: |
