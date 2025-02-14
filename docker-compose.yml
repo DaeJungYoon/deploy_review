@@ -29,6 +29,13 @@ services:
       # Dockerfile 경로
       context: ./api
       dockerfile: Dockerfile
+      cache_to:
+        - type=local,dest=/tmp/.buildx-cache/backend,mode=max # 여기서 local은 파일을 의미
+        # type: 캐시의 종류
+        # src: 캐시를 불러올 경로
+        # src: 캐시의 저장 방식(max: 최대한 많은 캐시 데이터를 저장)
+      cache_from:
+        - type=local,src=/tmp/.buildx-cache/backend
     image: daejungyoon/api-image:latest
     # ports:
     #   - '8080:8080'
@@ -47,6 +54,13 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
+      cache_to:
+        - type=local,dest=/tmp/.buildx-cache/frontend,mode=max # 여기서 local은 파일을 의미
+        # type: 캐시의 종류
+        # src: 캐시를 불러올 경로
+        # src: 캐시의 저장 방식(max: 최대한 많은 캐시 데이터를 저장)
+      cache_from:
+        - type=local,src=/tmp/.buildx-cache/frontend
     image: daejungyoon/client:latest
     ports:
       - '80:80'
@@ -58,7 +72,7 @@ services:
     depends_on:
       - db
       - api
-# ㅇㄹㄹㄹ
+# 
 # volumes와 networks 블록
 volumes:
   db-volume:
